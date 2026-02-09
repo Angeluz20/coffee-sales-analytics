@@ -19,6 +19,7 @@ export const FileImportsMessages = {
   ALREADY_IMPORTED: 'This file has already been imported and no changes were detected',
   
   EMPTY_FILE: 'The uploaded file is empty',
+  REQUIRED_FIELDS_ARE_MISSING : 'Required fields are missing',
   INVALID_HEADERS: (headers: string[]) =>
     `Invalid file structure. Missing columns: ${headers.join(', ')}`,
 };
