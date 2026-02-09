@@ -1,4 +1,4 @@
-☕ Sistema de Análise de Vendas de Café
+Sistema de Análise de Vendas de Café
 
 ## 1. Contexto do Desafio
 
