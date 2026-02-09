@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsInt,
   IsNotEmpty,
@@ -6,29 +6,38 @@ import {
   IsString,
   IsDateString,
   MaxLength,
+  IsOptional,
+  IsDate,
+  Min,
+  Max,
 } from 'class-validator';
 
 export class CreateCoffeeSaleDto {
-  @ApiProperty({
+
+  @ApiPropertyOptional({
     example: '2026-02-05',
-    description: 'Data da venda (YYYY-MM-DD)',
+    description: 'Data da venda (YYYY-MM-DD). Opcional se datetime existir.',
   })
+  @IsOptional()
   @IsDateString()
-  date: string;
+  date?: string;
 
   @ApiProperty({
     example: '2026-02-05T14:30:00',
     description: 'Data e hora completas da venda',
   })
-  @IsDateString()
-  datetime: string;
+  @IsDate()
+  datetime: Date;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 14,
-    description: 'Hora do dia ou dia do período (dependendo da regra de negócio)',
+    description: 'Hora do dia (0–23). Pode ser derivada do datetime.',
   })
+  @IsOptional()
   @IsInt()
-  hourOrDay: number;
+  @Min(0)
+  @Max(23)
+  hourOfDay?: number;
 
   @ApiProperty({
     example: 'Cappuccino',
@@ -39,71 +48,77 @@ export class CreateCoffeeSaleDto {
   @MaxLength(255)
   coffeeName: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'Manhã',
     description: 'Período do dia (manhã, tarde, noite)',
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MaxLength(255)
-  timeOfDay: string;
+  timeOfDay?: string;
 
-  @ApiProperty({
-    example: 'sunday',
+  @ApiPropertyOptional({
+    example: 'Sunday',
     description: 'Dia da semana por extenso',
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MaxLength(50)
-  weekday: string;
+  weekday?: string;
 
-  @ApiProperty({
-    example: 'Card',
-    description: 'Itau',
+  @ApiPropertyOptional({
+    example: 'Visa',
+    description: 'Bandeira do cartão',
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MaxLength(100)
-  card: string;
+  card?: string;
 
-  
-  @ApiProperty({
-    example: 'Cash Type',
-    description: 'Itau',
+  @ApiPropertyOptional({
+    example: 'Credit',
+    description: 'Tipo de pagamento (Cash, Credit, Debit)',
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MaxLength(50)
-  cashType: string;
+  cashType?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'Fevereiro',
     description: 'Nome do mês',
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MaxLength(50)
-  monthName: string;
+  monthName?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 1,
-    description: 'Ordenação do dia da semana (1 = segunda, 7 = domingo)',
+    description: 'Ordenação do dia da semana (1 = segunda)',
   })
-  @IsNumber()
-  weekDaySort: number;
-
-  @ApiProperty({
-    example: 2,
-    description: 'Ordenação do mês (1 = janeiro, 12 = dezembro)',
-  })
+  @IsOptional()
   @IsInt()
-  monthSort: number;
+  @Min(1)
+  @Max(7)
+  weekDaySort?: number;
+
+  @ApiPropertyOptional({
+    example: 2,
+    description: 'Ordenação do mês (1 = janeiro)',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(12)
+  monthSort?: number;
 
   @ApiProperty({
-    example: 9.90,
+    example: 9.9,
     description: 'Valor da venda',
   })
   @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0.01)
   amount: number;
 
   @ApiProperty({
@@ -113,9 +128,9 @@ export class CreateCoffeeSaleDto {
   @IsInt()
   userId: number;
 
-    @ApiProperty({
-    example: 1,
-    description: 'ID do usuário dono da venda',
+  @ApiProperty({
+    example: 10,
+    description: 'ID do arquivo importado',
   })
   @IsInt()
   fileId: number;
