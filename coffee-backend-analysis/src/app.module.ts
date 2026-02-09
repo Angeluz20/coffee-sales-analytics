@@ -14,6 +14,7 @@ import { FileImportsModule } from './modules/file-imports/file-imports.module';
     TypeOrmModule.forRoot(typeOrmConfig),
     ConfigModule.forRoot({
       isGlobal: true, 
+      envFilePath: '.env.local',
     }),
     UsersModule, 
     AuthModule, CoffeeSalesModule, FileImportsModule
