@@ -58,7 +58,14 @@ export class FileImport1770317724337 implements MigrationInterface {
                     {
                         name: 'created_at',
                         type: 'datetime2',
-                        default: 'SYSDATETIME()',
+                        isNullable: false,
+                        default: 'GETDATE()',
+                    },
+                    {
+                        name: 'updated_at',
+                        type: 'datetime2',
+                        isNullable: false,
+                        default: 'GETDATE()',
                     },
                     {
                         name: 'finished_at',
