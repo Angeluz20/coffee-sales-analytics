@@ -10,7 +10,6 @@ export async function importFile(userId: number, file: File) {
     },
   });
 
-  console.log(data)
   return data;
 }
 
