@@ -12,10 +12,14 @@ import {
   getTopSellingCoffees,
   getMostProfitableMonths,
 } from "../../service/coffeeSaleService";
+import { ImportItem } from "../uploadFile";
+import { getFileData } from "../../service/importService";
+import { useAuth } from "../../auth/AuthContext";
+import { toast } from "react-toastify";
 
 type TopCoffee = {
   coffeeName: string;
-  totalAmount: number;
+  totalSales: number;
 };
 
 type ProfitableMonth = {
@@ -24,32 +28,68 @@ type ProfitableMonth = {
 };
 
 export default function Dashboard() {
+  const { user } = useAuth();
+
   const [topCoffees, setTopCoffees] = useState<TopCoffee[]>([]);
   const [profitableMonths, setProfitableMonths] = useState<ProfitableMonth[]>([]);
+  const [filesSaved, setFilesSaved] = useState<ImportItem[]>([]);
+  const [selectedFileId, setSelectedFileId] = useState<number | null>(null);
+
   const [coffeeLimit, setCoffeeLimit] = useState(3);
   const [monthLimit, setMonthLimit] = useState(3);
   const [loadingCoffee, setLoadingCoffee] = useState(false);
   const [loadingMonth, setLoadingMonth] = useState(false);
 
+  const fetchFiles = useCallback(async () => {
+    if (!user?.id) return;
+
+    try {
+      const result = await getFileData(user.id);
+      setFilesSaved(result.data);
+
+      if (result.data.length > 0) {
+        setSelectedFileId(result.data[0].id);
+      }
+    } catch {
+      toast.error("Erro ao carregar arquivos");
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    fetchFiles();
+  }, [fetchFiles]);
+
   const fetchTopCoffees = useCallback(async () => {
+    if (!selectedFileId) return;
+
     try {
       setLoadingCoffee(true);
-      const coffees = await getTopSellingCoffees(coffeeLimit);
+      const coffees = await getTopSellingCoffees(
+        coffeeLimit,
+        selectedFileId
+      );
+      console.dir(coffees, {depth: null})
       setTopCoffees(coffees);
     } finally {
       setLoadingCoffee(false);
     }
-  }, [coffeeLimit]);
+  }, [coffeeLimit, selectedFileId]);
 
   const fetchProfitableMonths = useCallback(async () => {
+    if (!selectedFileId) return;
+
     try {
       setLoadingMonth(true);
-      const months = await getMostProfitableMonths(monthLimit);
+      const months = await getMostProfitableMonths(
+        monthLimit,
+        selectedFileId
+      );
+      console.dir(months, {depth: null})
       setProfitableMonths(months);
     } finally {
       setLoadingMonth(false);
     }
-  }, [monthLimit]);
+  }, [monthLimit, selectedFileId]);
 
   useEffect(() => {
     fetchTopCoffees();
@@ -62,6 +102,31 @@ export default function Dashboard() {
   return (
     <Box>
       <HeaderPage label="Dashboard" />
+
+      <Box
+        bg="#fff"
+        border="1px solid"
+        borderColor="#eceae8"
+        rounded="md"
+        p={4}
+        mt={6}
+      >
+        <Flex align="center" gap={4}>
+          <Text fontWeight="bold">Arquivo:</Text>
+
+          <Select
+            maxW="300px"
+            value={selectedFileId ?? ""}
+            onChange={(e) => setSelectedFileId(Number(e.target.value))}
+          >
+            {filesSaved.map((file) => (
+              <option key={file.id} value={file.id}>
+                {file.originalName}
+              </option>
+            ))}
+          </Select>
+        </Flex>
+      </Box>
 
       <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6} mt={6}>
         <Box
@@ -104,7 +169,7 @@ export default function Dashboard() {
                     {index + 1}. {item.coffeeName}
                   </Text>
                   <Text fontWeight="bold" color="green.600">
-                    R$ {item.totalAmount.toFixed(2)}
+                    R$ {item.totalSales.toFixed(2)}
                   </Text>
                 </Flex>
               ))}
@@ -154,7 +219,7 @@ export default function Dashboard() {
                     {index + 1}. {item.month}
                   </Text>
                   <Text fontWeight="bold" color="green.600">
-                    R$ {item.totalAmount.toFixed(2)}
+                    R$ {(item.totalAmount ?? 0).toFixed(2)}
                   </Text>
                 </Flex>
               ))}
