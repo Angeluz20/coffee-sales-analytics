@@ -22,12 +22,12 @@ export class CoffeeSalesService {
     return this.coffeeSalesRepository.bulkUpsert(dtos);
   }
 
-  async findTopSellingCoffees(userId: number, limit = 3) {
-    return this.coffeeSalesRepository.getTopSellingCoffees(userId, limit);
+  async findTopSellingCoffees(userId: number, fileId: number, limit = 3) {
+    return this.coffeeSalesRepository.getTopSellingCoffees(userId, fileId, limit);
   }
 
-  async findMostProfitableMonths(userId: number, limit = 3) {
-    return this.coffeeSalesRepository.getMostProfitableMonths(userId, limit);
+  async findMostProfitableMonths(userId: number, fileId: number, limit = 3) {
+    return this.coffeeSalesRepository.getMostProfitableMonths(userId, fileId, limit);
   }
 
   async findAllCoffeeSales(): Promise<CoffeeSale[]> {
