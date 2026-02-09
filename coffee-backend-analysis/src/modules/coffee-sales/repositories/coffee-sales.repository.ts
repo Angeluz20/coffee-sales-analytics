@@ -17,21 +17,16 @@ export class CoffeeSalesRepository implements CoffeeSalesInterface {
         return this.repository.save(saveData)
     }
 
-
     async bulkUpsert(data: CreateCoffeeSaleDto[]): Promise<number> {
         if (data.length === 0) return 0;
 
-        const CHUNK_SIZE = 50; 
+        const CHUNK_SIZE = Math.floor(2000 / 15); 
+        
         for (let i = 0; i < data.length; i += CHUNK_SIZE) {
-            const chunk = data.slice(i, i + CHUNK_SIZE);
-            
-            await this.repository.upsert(
-                chunk,
-                {
-                    conflictPaths: ['userId', 'coffeeName', 'datetime'], 
-                    skipUpdateIfNoValuesChanged: true,
-                }
-            );
+            await this.repository.upsert(data.slice(i, i + CHUNK_SIZE), {
+                conflictPaths: ['userId', 'coffeeName', 'datetime'],
+                skipUpdateIfNoValuesChanged: true,
+            });
         }
 
         return data.length;
@@ -52,25 +47,35 @@ export class CoffeeSalesRepository implements CoffeeSalesInterface {
         return result
     }
     
-    async getTopSellingCoffees(userId: number, limit: number) {
+    async getTopSellingCoffees(
+        userId: number,
+        fileId: number,
+        limit: number,
+    ) {
     return this.repository
         .createQueryBuilder('sc')
         .select('sc.coffeeName', 'coffeeName')
-        .addSelect('SUM(sc.amount)', 'totalAmount')
-        .where('sc.userId = :userId', { userId }) 
+        .addSelect('COUNT(*)', 'totalSales')
+        .where('sc.userId = :userId', { userId })
+        .andWhere('sc.fileId = :fileId', { fileId })
         .groupBy('sc.coffeeName')
-        .orderBy('totalAmount', 'DESC')
+        .orderBy('totalSales', 'DESC')
         .limit(limit)
         .getRawMany();
     }
 
-    async getMostProfitableMonths(userId: number, limit = 5) {
+    async getMostProfitableMonths(
+        userId: number,
+        fileId: number,
+        limit = 5,
+    ) {
     return this.repository
         .createQueryBuilder('sc')
         .select('sc.monthName', 'month')
         .addSelect('sc.monthSort', 'monthSort')
         .addSelect('SUM(sc.amount)', 'totalAmount')
-        .where('sc.userId = :userId', { userId }) 
+        .where('sc.userId = :userId', { userId })
+        .andWhere('sc.fileId = :fileId', { fileId })
         .groupBy('sc.monthName')
         .addGroupBy('sc.monthSort')
         .orderBy('totalAmount', 'DESC')
