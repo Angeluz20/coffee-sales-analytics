@@ -27,7 +27,6 @@ export default function AuthPage() {
       })
       .catch((err) => {
         const errorMessage = err.response.data.message;
-        console.log(err.response.data.message)
         if(errorMessage === 'User not found') {
             toast.error('Usuário não encontrado. Verifique seus dados e tente novamente.');
             return
