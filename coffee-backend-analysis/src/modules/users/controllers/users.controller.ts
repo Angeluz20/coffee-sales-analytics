@@ -65,6 +65,7 @@ export class UsersController {
   }
 
   @Get('name/:name')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Retrieve a user by name' })
   async findByName(
     @Param('name') name: string,
@@ -79,6 +80,7 @@ export class UsersController {
   }
 
   @Get('id/:id')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Retrieve a user by ID' })
   async findOne(
     @Param('id', ParseIntPipe) id: number,
@@ -92,8 +94,8 @@ export class UsersController {
     };
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get()
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Retrieve all users' })
   async findAll() {
     const users =
@@ -109,6 +111,7 @@ export class UsersController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Update a user by ID' })
   @ApiBody({ type: UpdateUserDto })
   async update(
@@ -128,6 +131,7 @@ export class UsersController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Delete a user by ID' })
   async remove(
     @Param('id', ParseIntPipe) id: number,
