@@ -6,6 +6,7 @@ import {
   OneToMany,
   CreateDateColumn,
   JoinColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { CoffeeSale } from '../../coffee-sales/entities/coffee-sale.entity';
@@ -39,9 +40,16 @@ export class FileImport {
   @CreateDateColumn({
     name: 'created_at',
     type: 'datetime2',
-    default: () => 'SYSDATETIME()',
+    default: () => 'GETDATE()',
   })
   createdAt: Date;
+
+  @UpdateDateColumn({
+    name: 'updated_at',
+    type: 'datetime2',
+    default: () => 'GETDATE()',
+  })
+  updatedAt: Date;
 
   @Column({
     name: 'finished_at',
