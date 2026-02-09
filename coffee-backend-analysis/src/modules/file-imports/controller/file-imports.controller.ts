@@ -12,6 +12,7 @@ import {
   MaxFileSizeValidator,
   ConflictException,
   Body,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBody, ApiConsumes } from '@nestjs/swagger';
@@ -19,8 +20,10 @@ import { ApiBody, ApiConsumes } from '@nestjs/swagger';
 import { FileImportsService } from '../services/file-imports.service';
 import { UpdateFileImportDto } from '../dto/update-file-import.dto';
 import { FileImportsMessages } from 'src/common/messages/file-import.messages';
+import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
 
 @Controller('file-imports')
+@UseGuards(JwtAuthGuard)
 export class FileImportsController {
   constructor(
     private readonly fileImportsService: FileImportsService,
@@ -71,6 +74,7 @@ export class FileImportsController {
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard)
   async findAll() {
     const data = await this.fileImportsService.findAll();
 
@@ -84,6 +88,7 @@ export class FileImportsController {
   }
 
   @Get('userId/:userId')
+  @UseGuards(JwtAuthGuard)
   async findAllByUser(
     @Param('userId') userId: number,
   ) {
@@ -102,6 +107,7 @@ export class FileImportsController {
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
   async findOne(@Param('id') id: number) {
     const data =
       await this.fileImportsService.findOne(id);
@@ -113,6 +119,7 @@ export class FileImportsController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
   async update(
     @Param('id') id: number,
     @Body() dto: UpdateFileImportDto,
@@ -127,6 +134,7 @@ export class FileImportsController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   async remove(@Param('id') id: number) {
     await this.fileImportsService.remove(id);
 
