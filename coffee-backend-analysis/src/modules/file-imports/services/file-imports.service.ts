@@ -130,11 +130,7 @@ export class FileImportsService {
 
       for (const [index, row] of rows.entries()) {
           try {
-              const rawMoney = row.money
-                  ? String(row.money).replace(/[^\d.-]/g, '')
-                  : '0';
-              
-              const dto = this.mapRowToDto(row, rawMoney, userId, fileId);
+              const dto = this.mapRowToDto(row, userId, fileId);
               allDtos.push(dto);
 
           } catch (error) {
@@ -158,10 +154,15 @@ export class FileImportsService {
 
       return finished;
   }
+ 
+  private parseMoney(value: unknown): number {
+     const MONEY_REGEX = /[^\d.-]/g;
+    if (value == null) return 0;
+    return Number(String(value).replace(MONEY_REGEX, '')) || 0;
+  }
 
   private mapRowToDto(
     row: any,
-    rawMoney: string,
     userId: number,
     fileId: number,
   ): CreateCoffeeSaleDto {
@@ -169,7 +170,7 @@ export class FileImportsService {
       date: parseBrDateToIso(row.date),
       datetime: parseExcelDatetime(row.datetime),
       coffeeName: row.coffee_name,
-      amount: parseFloat(rawMoney),
+      amount: this.parseMoney(row.money),
       weekday: row.Weekday || row.weekday,
       monthName: row.Month_name || row.month,
       weekDaySort: Number(row.Weekdaysort || 0),
