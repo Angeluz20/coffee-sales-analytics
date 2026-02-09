@@ -28,7 +28,7 @@ export class CoffeeSales1770318173240 implements MigrationInterface {
                         default: 'GETDATE()'
                     },
                     {
-                        name: 'hour_or_day',
+                        name: 'hour_of_day',
                         type: 'int',
                         isNullable: true,
                     },
