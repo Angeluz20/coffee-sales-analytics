@@ -3,7 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Injectable } from '@nestjs/common';
 
 import { AuthService } from '../services/auth.service';
-import { InvalidCredentialsException } from 'src/modules/coffee-sales/exceptions/auth.exception';
+import { InvalidCredentialsException } from 'src/common/exceptions/auth.exception';
 
 @Injectable()
 export class LocalStrategy extends PassportStrategy(Strategy) {
