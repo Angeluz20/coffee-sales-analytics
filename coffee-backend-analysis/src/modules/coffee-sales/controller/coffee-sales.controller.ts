@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Req,
+  Query,
 } from '@nestjs/common';
 import { CoffeeSalesService } from '../services/coffee-sales.service';
 import { CreateCoffeeSaleDto } from '../dto/create-coffee-sale.dto';
@@ -22,6 +23,7 @@ export class CoffeeSalesController {
   ) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   async create(@Body() dto: CreateCoffeeSaleDto) {
     const data =
       await this.coffeeSalesService.createCoffeeSale(dto);
@@ -33,6 +35,7 @@ export class CoffeeSalesController {
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard)
   async findAll() {
     const data =
       await this.coffeeSalesService.findAllCoffeeSales();
@@ -47,17 +50,19 @@ export class CoffeeSalesController {
   @UseGuards(JwtAuthGuard)
   async getTopSellingCoffees(
     @Req() req,
-    @Param('limit') limit: number,
+    @Param('limit') limit: string,
+    @Query('fileId') fileId: string,
   ) {
     const userId = req.user.sub;
 
     const data = await this.coffeeSalesService.findTopSellingCoffees(
       userId,
-      +limit,
+      Number(fileId),
+      Number(limit),
     );
 
     return {
-      message: CoffeeSalesMessages.FIND_SUCCESS_TOP_SELLING_COFFEES(+limit),
+      message: CoffeeSalesMessages.FIND_SUCCESS_TOP_SELLING_COFFEES(Number(limit)),
       data,
     };
   }
@@ -66,22 +71,27 @@ export class CoffeeSalesController {
   @UseGuards(JwtAuthGuard)
   async getMostProfitableMonths(
     @Req() req,
-    @Param('limit') limit: number,
+    @Param('limit') limit: string,
+    @Query('fileId') fileId: string,
   ) {
     const userId = req.user.sub;
 
     const data = await this.coffeeSalesService.findMostProfitableMonths(
       userId,
-      +limit,
+      Number(fileId),
+      Number(limit),
     );
 
     return {
-      message: CoffeeSalesMessages.FIND_SUCCESS_MOST_PROFITABLE_MONTHS(+limit),
+      message: CoffeeSalesMessages.FIND_SUCCESS_MOST_PROFITABLE_MONTHS(
+        Number(limit),
+      ),
       data,
     };
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
   async findOne(@Param('id') id: string) {
     const data =
       await this.coffeeSalesService.findCoffeeSaleById(+id);
@@ -93,6 +103,7 @@ export class CoffeeSalesController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateCoffeeSaleDto,
@@ -107,6 +118,7 @@ export class CoffeeSalesController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   async remove(@Param('id') id: string) {
     await this.coffeeSalesService.deleteCoffeeSale(+id);
 
