@@ -5,19 +5,30 @@ type ApiResponse<T> = {
   data: T;
 };
 
-export async function getTopSellingCoffees(topK: number) {
+export async function getTopSellingCoffees(
+  topK: number,
+  fileId: number,
+) {
   const { data } = await api.get<ApiResponse<any[]>>(
-    `coffee-sales/get-sellings-coffees/${topK}`
+    `coffee-sales/get-sellings-coffees/${topK}`,
+    {
+      params: { fileId },
+    },
   );
 
   return data.data;
 }
 
-export async function getMostProfitableMonths(topK: number) {
+export async function getMostProfitableMonths(
+  topK: number,
+  fileId: number,
+) {
   const { data } = await api.get<ApiResponse<any[]>>(
-    `coffee-sales/get-most-profitable-months/${topK}`
+    `coffee-sales/get-most-profitable-months/${topK}`,
+    {
+      params: { fileId },
+    },
   );
 
   return data.data;
 }
-
