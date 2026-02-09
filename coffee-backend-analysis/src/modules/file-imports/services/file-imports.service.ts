@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { createHash } from 'crypto';
 
 import { CreateFileImportDto } from '../dto/create-file-import.dto';
@@ -10,18 +10,18 @@ import { CoffeeSalesService } from 'src/modules/coffee-sales/services/coffee-sal
 import { UsersService } from 'src/modules/users/services/users.service';
 
 import { readXlsx } from 'src/utils/read-file';
-import { parseBrDateToIso } from 'src/utils/formatData.utils';
+import { parseBrDateToIso, parseExcelDatetime } from 'src/utils/formatData.utils';
 import { CreateCoffeeSaleDto } from 'src/modules/coffee-sales/dto/create-coffee-sale.dto';
 import { FileAlreadyImportedException, FileImportNotFoundException } from 'src/modules/coffee-sales/exceptions/file-import.exception';
+import { FileImportsMessages } from 'src/common/messages/file-import.messages';
 
 const Status = {
   PENDING: 'PENDING',
   SUCCESS: 'SUCCESS',
   PROCESSING: 'PROCESSING',
   ERROR: 'ERROR',
-  FINISEHD: 'FINISHED'
+  FINISHED: 'FINISHED'
 };
-
 
 @Injectable()
 export class FileImportsService {
@@ -57,17 +57,13 @@ export class FileImportsService {
     return this.fileRepository.create(userId, dto);
   }
 
-async startImport(
+  async startImport(
     userId: number,
     file: Express.Multer.File,
   ): Promise<FileImport> {
     await this.userService.findById(userId);
 
-    const rows = readXlsx(
-      file.buffer,
-      this.EXPECTED_HEADERS,
-    );
-
+    const rows = readXlsx(file.buffer, this.EXPECTED_HEADERS);
     const totalRecords = rows.length;
 
     const fileHash = createHash('sha256')
@@ -77,7 +73,7 @@ async startImport(
     const identicalFile =
       await this.fileRepository.findOneByHash(fileHash);
 
-    if (identicalFile && identicalFile.status === Status.FINISEHD) {
+    if (identicalFile && identicalFile.status === Status.FINISHED) {
       throw new FileAlreadyImportedException();
     }
 
@@ -90,15 +86,17 @@ async startImport(
     let fileData: FileImport;
 
     if (existingFile) {
-      const updated =
-        await this.fileRepository.update(existingFile.id, {
+      const updated = await this.fileRepository.update(
+        existingFile.id,
+        {
           storedName: `${Date.now()}-${file.originalname}`,
           fileHash,
           status: Status.PENDING,
           processedRecords: 0,
           totalRecords,
           errorMessage: '',
-        });
+        },
+      );
 
       if (!updated) {
         throw new FileImportNotFoundException(existingFile.id);
@@ -115,107 +113,50 @@ async startImport(
       });
     }
 
-    return this.processImport(
-      rows,
-      fileData.id,
-      userId,
-    );
+    return this.processImport(rows, fileData.id, userId);
   }
 
   async processImport(
-    rows: any[],
-    fileId: number,
-    userId: number,
+      rows: any[],
+      fileId: number,
+      userId: number,
   ): Promise<FileImport> {
-    const COLUMNS_PER_ROW = 15;
-    const MAX_SQL_PARAMS = 1500;
+      const errors: string[] = [];
+      const allDtos: CreateCoffeeSaleDto[] = [];
 
-    const BATCH_SIZE = Math.max(
-      1,
-      Math.floor(MAX_SQL_PARAMS / COLUMNS_PER_ROW),
-    );
+      await this.fileRepository.update(fileId, {
+          status: Status.PROCESSING,
+      });
 
-    const errors: string[] = [];
-    let processedCount = 0;
+      for (const [index, row] of rows.entries()) {
+          try {
+              const rawMoney = row.money
+                  ? String(row.money).replace(/[^\d.-]/g, '')
+                  : '0';
+              
+              const dto = this.mapRowToDto(row, rawMoney, userId, fileId);
+              allDtos.push(dto);
 
-    const batchMap = new Map<string, CreateCoffeeSaleDto>();
-
-    const started = await this.fileRepository.update(fileId, {
-      status: Status.PROCESSING,
-    });
-
-    if (!started) {
-      throw new FileImportNotFoundException(fileId);
-    }
-
-    for (const [index, row] of rows.entries()) {
-      try {
-        if (!row.date || !row.coffee_name) {
-          throw new Error('Required fields are missing');
-        }
-
-        const rawMoney = row.money
-          ? String(row.money).replace(/[^\d.-]/g, '')
-          : '0';
-
-        const dto = this.mapRowToDto(
-          row,
-          rawMoney,
-          userId,
-          fileId,
-        );
-
-        const uniqueKey = `${dto.userId}_${dto.coffeeName}_${new Date(
-          dto.datetime,
-        ).getTime()}`;
-
-        batchMap.set(uniqueKey, dto);
-
-        if (batchMap.size === BATCH_SIZE) {
-          processedCount += await this.flushBatch(batchMap);
-        }
-      } catch (error) {
-        errors.push(
-          `Row ${index + 1}: ${(error as Error).message}`,
-        );
+          } catch (error) {
+              errors.push(`Row ${index + 1}: ${(error as Error).message}`);
+          }
       }
-    }
 
-    if (batchMap.size > 0) {
-      processedCount += await this.flushBatch(batchMap);
-    }
+      const processedCount = await this.coffeeSaleService.upsertManyCoffeeSales(allDtos);
 
-    const finished = await this.fileRepository.update(fileId, {
-      status: Status.FINISEHD,
-      processedRecords: processedCount,
-      totalRecords: rows.length,
-      finishedAt: new Date(),
-      errorMessage:
-        errors.length > 0
-          ? errors.join(' | ').substring(0, 500)
-          : '',
-    });
+      const finished = await this.fileRepository.update(fileId, {
+          status: Status.FINISHED,
+          processedRecords: processedCount,
+          totalRecords: rows.length,
+          finishedAt: new Date(),
+          errorMessage: errors.length > 0 ? errors.join(' | ').substring(0, 500) : '',
+      });
 
-    if (!finished) {
-      throw new FileImportNotFoundException(fileId);
-    }
+      if (!finished) {
+          throw new FileImportNotFoundException(fileId);
+      }
 
-    return finished;
-  }
-
-  private async flushBatch(
-    batchMap: Map<string, CreateCoffeeSaleDto>,
-  ): Promise<number> {
-    const data = Array.from(batchMap.values());
-
-    const result =
-      await this.coffeeSaleService.upsertManyCoffeeSales(
-        data,
-      );
-
-    batchMap.clear();
-
-    return result;
+      return finished;
   }
 
   private mapRowToDto(
@@ -226,14 +167,14 @@ async startImport(
   ): CreateCoffeeSaleDto {
     return {
       date: parseBrDateToIso(row.date),
-      datetime: parseBrDateToIso(row.datetime),
+      datetime: parseExcelDatetime(row.datetime),
       coffeeName: row.coffee_name,
       amount: parseFloat(rawMoney),
       weekday: row.Weekday || row.weekday,
       monthName: row.Month_name || row.month,
       weekDaySort: Number(row.Weekdaysort || 0),
       monthSort: Number(row.Monthsort || row.month_sort),
-      hourOrDay: Number(row.hour_of_day || row.hour_or_day),
+      hourOfDay: Number(row.hour_of_day),
       timeOfDay: row.Time_of_Day || row.time_of_day,
       card: row.card,
       cashType: row.cash_type,
