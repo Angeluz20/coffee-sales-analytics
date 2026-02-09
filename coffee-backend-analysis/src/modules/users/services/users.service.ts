@@ -9,7 +9,7 @@ import { UserRepository } from '../repositories/users.repository';
 import {
   UserEmailAlreadyExistsException,
   UserNotFoundException,
-} from 'src/modules/coffee-sales/exceptions/user.exception';
+} from 'src/common/exceptions/user.exception';
 
 @Injectable()
 export class UsersService {

@@ -12,7 +12,7 @@ import { UsersService } from 'src/modules/users/services/users.service';
 import { readXlsx } from 'src/utils/read-file';
 import { parseBrDateToIso, parseExcelDatetime } from 'src/utils/formatData.utils';
 import { CreateCoffeeSaleDto } from 'src/modules/coffee-sales/dto/create-coffee-sale.dto';
-import { FileAlreadyImportedException, FileImportNotFoundException } from 'src/modules/coffee-sales/exceptions/file-import.exception';
+import { FileAlreadyImportedException, FileImportNotFoundException } from 'src/common/exceptions/file-import.exception';
 import { FileImportsMessages } from 'src/common/messages/file-import.messages';
 
 const Status = {

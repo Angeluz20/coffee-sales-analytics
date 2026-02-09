@@ -3,7 +3,7 @@ import { CreateCoffeeSaleDto } from '../dto/create-coffee-sale.dto';
 import { UpdateCoffeeSaleDto } from '../dto/update-coffee-sale.dto';
 import { CoffeeSalesRepository } from '../repositories/coffee-sales.repository';
 import { CoffeeSale } from '../entities/coffee-sale.entity';
-import { CoffeeSaleNotFoundException } from '../exceptions/coffee-salles.exception';
+import { CoffeeSaleNotFoundException } from '../../../common/exceptions/coffee-salles.exception';
 
 @Injectable()
 export class CoffeeSalesService {
