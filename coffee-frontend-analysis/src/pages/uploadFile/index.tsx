@@ -16,7 +16,11 @@ import {
 import { GrUpload } from "react-icons/gr";
 import { PiMicrosoftExcelLogoFill } from "react-icons/pi";
 import { HeaderPage } from "../../components/HeaderPages";
-import { getFileData, importFile, removeFile } from "../../service/importService";
+import {
+  getFileData,
+  importFile,
+  removeFile,
+} from "../../service/importService";
 import { useAuth } from "../../auth/AuthContext";
 import { toast } from "react-toastify";
 
@@ -37,25 +41,26 @@ export type ImportItem = {
 };
 
 export default function UploadFile() {
+  const { user } = useAuth();
+
   const [file, setFile] = useState<File | null>(null);
   const [filesSaved, setFilesSaved] = useState<ImportItem[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [isDeleteFile, setIsDeleteFile] = useState(false);
-  const { user } = useAuth();
-
-  console.log(filesSaved)
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const IconUpload = GrUpload as React.ElementType;
   const IconFile = PiMicrosoftExcelLogoFill as React.ElementType;
 
   const formattedDate = (date: string) => {
+    if (!date) return "-";
+
     const dateReceived = new Date(date);
 
     return dateReceived.toLocaleString("pt-BR", {
       dateStyle: "short",
       timeStyle: "short",
-    })
-  }
+    });
+  };
 
   const fetchFiles = useCallback(async () => {
     if (!user?.id) return;
@@ -74,7 +79,9 @@ export default function UploadFile() {
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [
+        ".xlsx",
+      ],
       "application/vnd.ms-excel": [".xls"],
     },
     maxFiles: 1,
@@ -98,34 +105,34 @@ export default function UploadFile() {
         await fetchFiles();
       })
       .catch((err) => {
-        console.log(err.response.data.message);
-        const errorMessage = err.response.data.message;
+        const errorMessage = err.response?.data?.message;
 
         if (
-            errorMessage === 'This file has already been imported and no changes were detected'){
-            toast.warn('Este arquivo já foi importado e nenhuma alteração foi detectada.')
-            return
-          }
+          errorMessage ===
+          "This file has already been imported and no changes were detected"
+        ) {
+          toast.warn(
+            "Este arquivo já foi importado e nenhuma alteração foi detectada."
+          );
+          return;
+        }
 
         if (
-            errorMessage.startsWith(
-              'Invalid file structure. Missing columns:',
-            )
-          ) {
-            const columns = errorMessage
-              .replace(
-                'Invalid file structure. Missing columns:',
-                '',
-              )
-              .trim();
+          errorMessage?.startsWith(
+            "Invalid file structure. Missing columns:"
+          )
+        ) {
+          const columns = errorMessage
+            .replace("Invalid file structure. Missing columns:", "")
+            .trim();
 
-            toast.error(
-              `Estrutura do arquivo inválida. Coluna(s) obrigatória(s) ausente(s): ${columns}.`,
-            );
-            return;
-          }
-      
-        toast.error('Erro ao cadastrar o arquivo');
+          toast.error(
+            `Estrutura do arquivo inválida. Coluna(s) obrigatória(s) ausente(s): ${columns}.`
+          );
+          return;
+        }
+
+        toast.error("Erro ao cadastrar o arquivo");
       })
       .finally(() => {
         setIsUploading(false);
@@ -134,15 +141,14 @@ export default function UploadFile() {
 
   const handleRemoveItem = async (id: number) => {
     try {
-      setIsDeleteFile(true);
+      setDeletingId(id);
       await removeFile(id);
       toast.success("Removido com sucesso!");
-
       await fetchFiles();
     } catch {
       toast.error("Erro ao remover o arquivo");
     } finally {
-      setIsDeleteFile(false);
+      setDeletingId(null);
     }
   };
 
@@ -200,7 +206,7 @@ export default function UploadFile() {
 
             <Button
               colorScheme="green"
-              isLoading={isDeleteFile}
+              isLoading={isUploading}
               loadingText="Enviando"
               onClick={handleUpload}
             >
@@ -228,18 +234,15 @@ export default function UploadFile() {
                 <Tr key={item.id}>
                   <Td>{item.id}</Td>
                   <Td>{item.originalName}</Td>
-                  <Td>
-                    {formattedDate(item.createdAt)}
-                  </Td>
-                  <Td>
-                    {formattedDate(item.finishedAt)}
-                    </Td>
+                  <Td>{formattedDate(item.createdAt)}</Td>
+                  <Td>{formattedDate(item.updatedAt)}</Td>
                   <Td textAlign="center">
                     <Button
                       size="sm"
                       colorScheme="red"
                       variant="outline"
-                      isLoading={isUploading}
+                      isLoading={deletingId === item.id}
+                      loadingText="Removendo"
                       onClick={() => handleRemoveItem(item.id)}
                     >
                       Remover
