@@ -26,10 +26,10 @@ export class CoffeeSale {
   datetime: Date;
 
   @Column({
-    name: 'hour_or_day', 
+    name: 'hour_of_day', 
     type: 'int' 
   })
-  hourOrDay: number;
+  hourOfDay: number;
 
   @Column({ 
     name: 'coffee_name', 
